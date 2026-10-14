@@ -1,0 +1,5 @@
+model,accuracy,fake_precision,fake_recall,fake_f1,true_negatives,false_positives,false_negatives,true_positives
+Balanced Logistic Regression,0.9664,0.6023,0.9017,0.7222,3300,103,17,156
+Random Forest,0.9782,1.0,0.5491,0.709,3403,0,78,95
+Logistic Regression,0.9729,1.0,0.4393,0.6104,3403,0,97,76
+Naive Bayes,0.9639,0.9583,0.2659,0.4163,3401,2,127,46

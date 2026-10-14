@@ -1,79 +1,86 @@
-
 import joblib
 import pandas as pd
-from scipy.sparse import load_npz
-from sklearn.model_selection import train_test_split
+from pathlib import Path
+
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
-    f1_score
+    f1_score,
+    confusion_matrix,
 )
 
-# Load target labels
-data_path = r"E:\fake-job-detector\ml\data\fake_job_postings_cleaned.csv"
-df = pd.read_csv(data_path)
-y = df["fraudulent"]
+ML_DIR = Path(__file__).resolve().parents[1]
+MODELS_DIR = ML_DIR / "models"
+RESULTS_DIR = ML_DIR / "results"
 
-# Load TF-IDF features
-matrix_path = r"E:\fake-job-detector\ml\models\tfidf_matrix.npz"
-X = load_npz(matrix_path)
+# Load the fixed test data
+split_path = MODELS_DIR / "train_test_text_split.joblib"
+data = joblib.load(split_path)
 
-# Use the same train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
-)
+X_test_text = data["X_test"]
+y_test = data["y_test"]
 
-# Load trained models
-models = {
-    "Logistic Regression Baseline": joblib.load(
-        r"E:\fake-job-detector\ml\models\logistic_regression_baseline.joblib"
+# Model names and saved pipeline paths
+model_files = {
+    "Logistic Regression": (
+        "logistic_regression_baseline_pipeline.joblib"
     ),
-    "Logistic Regression Balanced": joblib.load(
-        r"E:\fake-job-detector\ml\models\logistic_regression_balanced.joblib"
+    "Balanced Logistic Regression": (
+        "logistic_regression_balanced_pipeline.joblib"
     ),
-    "Multinomial Naive Bayes": joblib.load(
-        r"E:\fake-job-detector\ml\models\naive_bayes_model.joblib"
-    )
+    "Naive Bayes": "naive_bayes_pipeline.joblib",
+    "Random Forest": "random_forest_pipeline.joblib",
 }
 
-print("All three models loaded successfully!")
-
-
-# Evaluate each model
 results = []
 
-for model_name, model in models.items():
-    y_pred = model.predict(X_test)
+for model_name, filename in model_files.items():
+    model_path = MODELS_DIR / filename
+
+    print(f"\nEvaluating: {model_name}")
+
+    pipeline = joblib.load(model_path)
+    y_pred = pipeline.predict(X_test_text)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(
+        y_test, y_pred, pos_label=1, zero_division=0
+    )
+    recall = recall_score(
+        y_test, y_pred, pos_label=1, zero_division=0
+    )
+    f1 = f1_score(
+        y_test, y_pred, pos_label=1, zero_division=0
+    )
+
+    tn, fp, fn, tp = confusion_matrix(
+        y_test, y_pred, labels=[0, 1]
+    ).ravel()
 
     results.append({
-        "Model": model_name,
-        "Accuracy": accuracy_score(y_test, y_pred),
-        "Fake Precision": precision_score(
-            y_test, y_pred, pos_label=1, zero_division=0
-        ),
-        "Fake Recall": recall_score(
-            y_test, y_pred, pos_label=1, zero_division=0
-        ),
-        "Fake F1 Score": f1_score(
-            y_test, y_pred, pos_label=1, zero_division=0
-        )
+        "model": model_name,
+        "accuracy": round(accuracy, 4),
+        "fake_precision": round(precision, 4),
+        "fake_recall": round(recall, 4),
+        "fake_f1": round(f1, 4),
+        "true_negatives": int(tn),
+        "false_positives": int(fp),
+        "false_negatives": int(fn),
+        "true_positives": int(tp),
     })
 
-comparison_df = pd.DataFrame(results)
+comparison = pd.DataFrame(results)
+comparison = comparison.sort_values(
+    by="fake_f1", ascending=False
+)
 
-print("\nModel Comparison:")
-print(comparison_df.round(4).to_string(index=False))
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
+output_path = RESULTS_DIR / "model_comparison_corrected.csv"
+comparison.to_csv(output_path, index=False)
 
+print("\nFinal Model Comparison:")
+print(comparison.to_string(index=False))
 
-# Save comparison results
-results_path = r"E:\fake-job-detector\ml\results\model_comparison.csv"
-
-comparison_df.to_csv(results_path, index=False)
-
-print("\nComparison saved at:", results_path)
+print("\nComparison saved at:", output_path)

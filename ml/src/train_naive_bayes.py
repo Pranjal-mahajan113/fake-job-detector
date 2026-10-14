@@ -1,105 +1,85 @@
-
 import joblib
 from pathlib import Path
 
-import pandas as pd
-from scipy.sparse import load_npz
-from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
-    confusion_matrix
+    confusion_matrix,
 )
 
-# Load target labels
-data_path = r"E:\fake-job-detector\ml\data\fake_job_postings_cleaned.csv"
+ML_DIR = Path(__file__).resolve().parents[1]
+MODELS_DIR = ML_DIR / "models"
+RESULTS_DIR = ML_DIR / "results"
 
-df = pd.read_csv(data_path)
-y = df["fraudulent"]
+# Load the fixed train-test split
+split_path = MODELS_DIR / "train_test_text_split.joblib"
+data = joblib.load(split_path)
 
-# Load TF-IDF features
-matrix_path = r"E:\fake-job-detector\ml\models\tfidf_matrix.npz"
+X_train_text = data["X_train"]
+X_test_text = data["X_test"]
+y_train = data["y_train"]
+y_test = data["y_test"]
 
-X = load_npz(matrix_path)
+print("Training samples:", len(X_train_text))
+print("Testing samples:", len(X_test_text))
 
-print("Features loaded:", X.shape)
-print("Labels loaded:", y.shape)
+# Build the Naive Bayes pipeline
+pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer(max_features=5000)),
+    ("classifier", MultinomialNB()),
+])
 
+pipeline.fit(X_train_text, y_train)
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
-)
+print("\nNaive Bayes pipeline training completed!")
 
-print("Training samples:", X_train.shape[0])
-print("Testing samples:", X_test.shape[0])
+# Evaluate the model
+y_pred = pipeline.predict(X_test_text)
 
-
-# Create the Naive Bayes model
-model = MultinomialNB()
-
-# Train the model
-model.fit(X_train, y_train)
-
-print("\nNaive Bayes training completed!")
-
-# Predict test labels
-y_pred = model.predict(X_test)
-
-
-# Calculate evaluation results
 accuracy = accuracy_score(y_test, y_pred)
 
-cm = confusion_matrix(y_test, y_pred)
+cm = confusion_matrix(
+    y_test,
+    y_pred,
+    labels=[0, 1],
+)
 
 report = classification_report(
     y_test,
     y_pred,
     labels=[0, 1],
     target_names=["Real (0)", "Fake (1)"],
-    zero_division=0
+    zero_division=0,
 )
 
-# Display results
-print("\nAccuracy:", accuracy)
-
+print("\nAccuracy:", round(accuracy, 4))
 print("\nConfusion Matrix:")
 print(cm)
-
 print("\nClassification Report:")
 print(report)
 
+# Save results separately
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Create results folder if needed
-results_dir = Path(r"E:\fake-job-detector\ml\results")
-results_dir.mkdir(parents=True, exist_ok=True)
-
-# Save evaluation results
-results_path = results_dir / "naive_bayes.txt"
+results_path = RESULTS_DIR / "naive_bayes_corrected.txt"
 
 with open(results_path, "w", encoding="utf-8") as file:
-    file.write("Multinomial Naive Bayes - Results\n")
-    file.write("=" * 40 + "\n")
-    file.write(f"Training samples: {X_train.shape[0]}\n")
-    file.write(f"Testing samples: {X_test.shape[0]}\n")
+    file.write("Naive Bayes - Corrected Pipeline Results\n")
+    file.write("=" * 42 + "\n")
+    file.write(f"Training samples: {len(X_train_text)}\n")
+    file.write(f"Testing samples: {len(X_test_text)}\n")
     file.write(f"Accuracy: {accuracy:.4f}\n\n")
     file.write("Confusion Matrix:\n")
     file.write(str(cm) + "\n\n")
     file.write("Classification Report:\n")
     file.write(report)
 
+# Save the complete pipeline
+model_path = MODELS_DIR / "naive_bayes_pipeline.joblib"
+joblib.dump(pipeline, model_path)
+
 print("\nResults saved at:", results_path)
-
-
-# Save trained model
-model_path = r"E:\fake-job-detector\ml\models\naive_bayes_model.joblib"
-
-joblib.dump(model, model_path)
-
-print("\nModel saved successfully!")
-print("Saved at:", model_path)
+print("Complete pipeline saved at:", model_path)

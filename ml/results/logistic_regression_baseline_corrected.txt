@@ -1,0 +1,19 @@
+Logistic Regression - Corrected Pipeline Results
+================================================
+Training samples: 14304
+Testing samples: 3576
+Accuracy: 0.9729
+
+Confusion Matrix:
+[[3403    0]
+ [  97   76]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    Real (0)       0.97      1.00      0.99      3403
+    Fake (1)       1.00      0.44      0.61       173
+
+    accuracy                           0.97      3576
+   macro avg       0.99      0.72      0.80      3576
+weighted avg       0.97      0.97      0.97      3576

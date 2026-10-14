@@ -1,0 +1,19 @@
+Random Forest - Corrected Pipeline Results
+============================================
+Training samples: 14304
+Testing samples: 3576
+Accuracy: 0.9782
+
+Confusion Matrix:
+[[3403    0]
+ [  78   95]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    Real (0)       0.98      1.00      0.99      3403
+    Fake (1)       1.00      0.55      0.71       173
+
+    accuracy                           0.98      3576
+   macro avg       0.99      0.77      0.85      3576
+weighted avg       0.98      0.98      0.98      3576

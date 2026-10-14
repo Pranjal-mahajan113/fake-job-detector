@@ -1,102 +1,93 @@
+
 import joblib
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from pathlib import Path
-import pandas as pd
-from scipy.sparse import load_npz
-from sklearn.model_selection import train_test_split
+
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-
-# Load target labels
-data_path = r"E:\fake-job-detector\ml\data\fake_job_postings_cleaned.csv"
-df = pd.read_csv(data_path)
-y = df["fraudulent"]
-
-# Load TF-IDF features
-matrix_path = r"E:\fake-job-detector\ml\models\tfidf_matrix.npz"
-X = load_npz(matrix_path)
-
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
 )
 
-# Create the Logistic Regression model
-model = LogisticRegression(
-    max_iter=1000,
-    class_weight="balanced"
-)
-# Train the model
-model.fit(X_train, y_train)
+ML_DIR = Path(__file__).resolve().parents[1]
+MODELS_DIR = ML_DIR / "models"
+RESULTS_DIR = ML_DIR / "results"
 
-print("Logistic Regression training Weigths completed!")
-print("Training samples:", X_train.shape[0])
-print("Testing samples:", X_test.shape[0])
+# Load the same train-test split used by the baseline model
+split_path = MODELS_DIR / "train_test_text_split.joblib"
+data = joblib.load(split_path)
 
+X_train_text = data["X_train"]
+X_test_text = data["X_test"]
+y_train = data["y_train"]
+y_test = data["y_test"]
 
-# y_pred = model.predict(X_test)
+print("Training samples:", len(X_train_text))
+print("Testing samples:", len(X_test_text))
 
-# print("\nAccuracy:", accuracy_score(y_test, y_pred))
+# Create the balanced Logistic Regression pipeline
+pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer(max_features=5000)),
+    (
+        "classifier",
+        LogisticRegression(
+            max_iter=1000,
+            class_weight="balanced",
+        ),
+    ),
+])
 
-# print("\nConfusion Matrix:")
-# print(confusion_matrix(y_test, y_pred))
+# Train only on training text
+pipeline.fit(X_train_text, y_train)
 
-# print("\nClassification Report:")
-# print(classification_report(
-#     y_test,
-#     y_pred,
-#     labels=[0, 1],
-#     target_names=["Real (0)", "Fake (1)"],
-#     zero_division=0
-# ))
+print("\nBalanced Logistic Regression training completed!")
 
-y_pred = model.predict(X_test)
+# Evaluate on unseen testing text
+y_pred = pipeline.predict(X_test_text)
 
-# Calculate evaluation results
 accuracy = accuracy_score(y_test, y_pred)
-cm = confusion_matrix(y_test, y_pred)
+
+cm = confusion_matrix(
+    y_test,
+    y_pred,
+    labels=[0, 1],
+)
+
 report = classification_report(
     y_test,
     y_pred,
     labels=[0, 1],
     target_names=["Real (0)", "Fake (1)"],
-    zero_division=0
+    zero_division=0,
 )
 
-# Display results
-print("\nAccuracy:", accuracy)
+print("\nAccuracy:", round(accuracy, 4))
 print("\nConfusion Matrix:")
 print(cm)
 print("\nClassification Report:")
 print(report)
 
-# Create results folder
-results_dir = Path(r"E:\fake-job-detector\ml\results")
-results_dir.mkdir(parents=True, exist_ok=True)
+# Save results separately
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Save evaluation results
-results_path = results_dir / "logistic_regression_balanced.txt"
+results_path = RESULTS_DIR / "logistic_regression_balanced_corrected.txt"
 
 with open(results_path, "w", encoding="utf-8") as file:
-    file.write("Logistic Regression - Balanced Results\n")
-    file.write("=" * 40 + "\n")
-    file.write(f"Training samples: {X_train.shape[0]}\n")
-    file.write(f"Testing samples: {X_test.shape[0]}\n")
+    file.write("Balanced Logistic Regression - Corrected Pipeline Results\n")
+    file.write("=" * 60 + "\n")
+    file.write(f"Training samples: {len(X_train_text)}\n")
+    file.write(f"Testing samples: {len(X_test_text)}\n")
     file.write(f"Accuracy: {accuracy:.4f}\n\n")
     file.write("Confusion Matrix:\n")
     file.write(str(cm) + "\n\n")
     file.write("Classification Report:\n")
     file.write(report)
 
+# Save the complete pipeline
+model_path = MODELS_DIR / "logistic_regression_balanced_pipeline.joblib"
+joblib.dump(pipeline, model_path)
+
 print("\nResults saved at:", results_path)
-
-
-model_path = r"E:\fake-job-detector\ml\models\logistic_regression_balanced.joblib"
-
-joblib.dump(model, model_path)
-
-print("\nModel saved successfully!")
-print("Saved at:", model_path)
+print("Complete pipeline saved at:", model_path)
