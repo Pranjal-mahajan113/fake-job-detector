@@ -1,6 +1,6 @@
 import joblib
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
+from pathlib import Path
 import pandas as pd
 from scipy.sparse import load_npz
 from sklearn.model_selection import train_test_split
@@ -25,34 +25,76 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # Create the Logistic Regression model
-model = LogisticRegression(max_iter=1000)
-
+model = LogisticRegression(
+    max_iter=1000,
+    class_weight="balanced"
+)
 # Train the model
 model.fit(X_train, y_train)
 
-print("Logistic Regression training completed!")
+print("Logistic Regression training Weigths completed!")
 print("Training samples:", X_train.shape[0])
 print("Testing samples:", X_test.shape[0])
 
 
+# y_pred = model.predict(X_test)
+
+# print("\nAccuracy:", accuracy_score(y_test, y_pred))
+
+# print("\nConfusion Matrix:")
+# print(confusion_matrix(y_test, y_pred))
+
+# print("\nClassification Report:")
+# print(classification_report(
+#     y_test,
+#     y_pred,
+#     labels=[0, 1],
+#     target_names=["Real (0)", "Fake (1)"],
+#     zero_division=0
+# ))
+
 y_pred = model.predict(X_test)
 
-print("\nAccuracy:", accuracy_score(y_test, y_pred))
-
-print("\nConfusion Matrix:")
-print(confusion_matrix(y_test, y_pred))
-
-print("\nClassification Report:")
-print(classification_report(
+# Calculate evaluation results
+accuracy = accuracy_score(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred)
+report = classification_report(
     y_test,
     y_pred,
     labels=[0, 1],
     target_names=["Real (0)", "Fake (1)"],
     zero_division=0
-))
+)
+
+# Display results
+print("\nAccuracy:", accuracy)
+print("\nConfusion Matrix:")
+print(cm)
+print("\nClassification Report:")
+print(report)
+
+# Create results folder
+results_dir = Path(r"E:\fake-job-detector\ml\results")
+results_dir.mkdir(parents=True, exist_ok=True)
+
+# Save evaluation results
+results_path = results_dir / "logistic_regression_balanced.txt"
+
+with open(results_path, "w", encoding="utf-8") as file:
+    file.write("Logistic Regression - Balanced Results\n")
+    file.write("=" * 40 + "\n")
+    file.write(f"Training samples: {X_train.shape[0]}\n")
+    file.write(f"Testing samples: {X_test.shape[0]}\n")
+    file.write(f"Accuracy: {accuracy:.4f}\n\n")
+    file.write("Confusion Matrix:\n")
+    file.write(str(cm) + "\n\n")
+    file.write("Classification Report:\n")
+    file.write(report)
+
+print("\nResults saved at:", results_path)
 
 
-model_path = r"E:\fake-job-detector\ml\models\logistic_regression_model.joblib"
+model_path = r"E:\fake-job-detector\ml\models\logistic_regression_balanced.joblib"
 
 joblib.dump(model, model_path)
 
