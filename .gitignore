@@ -1,0 +1,37 @@
+# Virtual environments
+.venv/
+env/
+venv/
+
+# VSCode settings
+.vscode/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled libraries
+*.so
+*.dll
+*.lib
+
+# Build/packaging
+*.egg-info/
+dist/
+build/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Test coverage / reports
+.coverage
+htmlcov/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore datasets (all files inside ml/data)
+ml/data/
