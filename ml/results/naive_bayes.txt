@@ -1,0 +1,19 @@
+Multinomial Naive Bayes - Results
+========================================
+Training samples: 14304
+Testing samples: 3576
+Accuracy: 0.9656
+
+Confusion Matrix:
+[[3402    1]
+ [ 122   51]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    Real (0)       0.97      1.00      0.98      3403
+    Fake (1)       0.98      0.29      0.45       173
+
+    accuracy                           0.97      3576
+   macro avg       0.97      0.65      0.72      3576
+weighted avg       0.97      0.97      0.96      3576
