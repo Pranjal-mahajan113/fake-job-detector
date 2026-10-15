@@ -1,0 +1,5 @@
+threshold,false_positives,false_negatives,true_positives,true_negatives,fake_precision,fake_recall,fake_f1
+0.5,90,19,120,2632,0.5714,0.8633,0.6877
+0.6,54,31,108,2668,0.6667,0.777,0.7176
+0.7,20,42,97,2702,0.8291,0.6978,0.7578
+0.8,8,52,87,2714,0.9158,0.6259,0.7436

@@ -1,10 +1,5 @@
-
-import joblib
-
-model = joblib.load(
-    "ml/models/logistic_regression_balanced_pipeline.joblib"
-)
-
+from predictor import predict_job
+# Five sample job descriptions
 test_jobs = [
     {
         "name": "Example 1 - Suspicious Data Entry",
@@ -56,10 +51,16 @@ test_jobs = [
     }
 ]
 
+# Predict using the shared prediction function
 for job in test_jobs:
-    prediction = model.predict([job["text"]])[0]
-    result = "Fake Job" if prediction == 1 else "Real Job"
+    result = predict_job(job["text"])
 
-    print("-" * 45)
+    print("-" * 50)
     print(job["name"])
-    print("Prediction:", result)
+    print("Fake Score:", result["fake_score"])
+    print("Threshold:", result["threshold"])
+    print("Prediction:", result["prediction"])
+    print("Label:", result["label"])
+
+print("-" * 50)
+print("All 5 job examples tested successfully.")

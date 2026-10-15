@@ -1,4 +1,3 @@
-
 import joblib
 from pathlib import Path
 
@@ -45,7 +44,13 @@ pipeline.fit(X_train_text, y_train)
 print("\nBalanced Logistic Regression training completed!")
 
 # Evaluate on unseen testing text
-y_pred = pipeline.predict(X_test_text)
+# y_pred = pipeline.predict(X_test_text)
+
+# Final predictions using the selected threshold
+THRESHOLD = 0.70
+
+fake_scores = pipeline.predict_proba(X_test_text)[:, 1]
+y_pred = (fake_scores >= THRESHOLD).astype(int)
 
 accuracy = accuracy_score(y_test, y_pred)
 
@@ -78,6 +83,7 @@ with open(results_path, "w", encoding="utf-8") as file:
     file.write("Balanced Logistic Regression - Corrected Pipeline Results\n")
     file.write("=" * 60 + "\n")
     file.write(f"Training samples: {len(X_train_text)}\n")
+    file.write(f"Decision threshold: {THRESHOLD:.2f}\n")
     file.write(f"Testing samples: {len(X_test_text)}\n")
     file.write(f"Accuracy: {accuracy:.4f}\n\n")
     file.write("Confusion Matrix:\n")
@@ -86,8 +92,24 @@ with open(results_path, "w", encoding="utf-8") as file:
     file.write(report)
 
 # Save the complete pipeline
-model_path = MODELS_DIR / "logistic_regression_balanced_pipeline.joblib"
-joblib.dump(pipeline, model_path)
+# model_path = MODELS_DIR / "logistic_regression_balanced_pipeline.joblib"
+# joblib.dump(pipeline, model_path)
+
+# print("\nResults saved at:", results_path)
+# print("Complete pipeline saved at:", model_path)
+
+
+
+# Save the pipeline and threshold together
+final_artifact = {
+    "model": pipeline,
+    "threshold": THRESHOLD,
+    "model_name": "Balanced Logistic Regression",
+}
+
+model_path = MODELS_DIR / "final_fake_job_detector.joblib"
+joblib.dump(final_artifact, model_path)
 
 print("\nResults saved at:", results_path)
-print("Complete pipeline saved at:", model_path)
+print("Final model artifact saved at:", model_path)
+print("Saved threshold:", final_artifact["threshold"])
